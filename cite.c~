@@ -152,7 +152,7 @@ int build_pages(char *dirname)
 				add_to_index(index, idx, dir->d_name);
 			}
 			printf("done\n");
-		}
+		} 
 
 	}
 	free(dir);
