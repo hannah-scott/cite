@@ -7,6 +7,10 @@
 #include "config.h"
 
 /*
+ * TODO stop using strcpy and strcat unsafely
+ */
+
+/*
  * Create and open index file
  */
 FILE *
