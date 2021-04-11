@@ -1,0 +1,33 @@
+
+body {
+    font-family: "Liberation Sans", sans-serif;
+    font-size: 20px;
+    background-color: white;
+   	color: black;
+    padding: 1% 2%;
+}
+
+h1, h2, h3 {
+	font-family: "Liberation Serif", serif;
+}
+
+code, pre {
+    font-family: "Liberation Mono", monospace;
+	color: cyan;
+}
+
+blockquote {
+	border-left: 5px solid #e4e4e4;
+	padding-left: 2%;
+	opacity: 70%;
+}
+
+a {
+    color: red;
+    text-decoration: none;
+}
+
+a:visited {
+    color: red;
+    text-decoration: none;
+}
