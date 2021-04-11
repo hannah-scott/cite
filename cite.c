@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -8,170 +9,190 @@
 /*
  * Create and open index file
  */
-FILE *open_index(char *fname)
+FILE *
+open_index (char *fname)
 {
-	char idx[MAXLINELENGTH];
-	strcpy(idx, BASEURL);
-	strcat(idx, "/");
-	strcat(idx, fname);
+  FILE *index;
+  char idx[MAXLINELENGTH];
+  strcpy (idx, BASEURL);
+  strcat (idx, "/");
+  strcat (idx, fname);
 
-	FILE *index = fopen(idx, "w");
+  index = fopen (idx, "w");
 
-	if (index == NULL) {
-		printf("Failed to open index");
-		exit(EXIT_FAILURE);
-	}
-	
-	return index;
+  if (index == NULL)
+    {
+      printf ("Failed to open index");
+      exit (EXIT_FAILURE);
+    }
+
+  return index;
 }
 
 /*
  * Inject head and header text into file
  */
-FILE *inject_head(FILE * page)
+FILE *
+inject_head (FILE * page)
 {
-	fprintf(page, "<html>\n");
-	fprintf(page, "<head>\n");
-	fprintf(page, "<title>%s</title>\n", TITLE);
-	fprintf(page, "<link rel='stylesheet' href='%s'", CSS);
-	fprintf(page, "</head>\n");
+  fprintf (page, "<html>\n");
+  fprintf (page, "<head>\n");
+  fprintf (page, "<title>%s</title>\n", TITLE);
+  fprintf (page, "<link rel='stylesheet' href='%s'", CSS);
+  fprintf (page, "</head>\n");
 
-	// body
-	fprintf(page, "<!-- Generated static page, don't edit this -->\n");
-	fprintf(page, "<body>\n");
-	fprintf(page, "<header><a href='%s/index.html'>Home</a>\n", BASEURL);
+  /*
+   * body
+   */
+  fprintf (page, "<!-- Generated static page, don't edit this -->\n");
+  fprintf (page, "<body>\n");
+  fprintf (page, "<header><a href='%s/index.html'>Home</a>\n", BASEURL);
 
-	fprintf(page, "<h1>%s</h1>\n", TITLE);
+  fprintf (page, "<h1>%s</h1>\n", TITLE);
 
-	return page;
+  return page;
 }
 
 /*
  * Inject footer text into file 
  */
-FILE *inject_foot(FILE * page)
+FILE *
+inject_foot (FILE * page)
 {
-	fprintf(page, "</body>\n</html>\n");
+  fprintf (page, "</body>\n</html>\n");
 
-	return page;
+  return page;
 }
 
 /*
  * Inject contents on file into another
  */
-FILE *inject_contents(FILE * body, char *in)
+FILE *
+inject_contents (FILE * body, char *in)
 {
-	char s[MAXLINELENGTH];
+  char s[MAXLINELENGTH];
 
-	FILE *inf = fopen(in, "r");
+  FILE *inf = fopen (in, "r");
 
-	if (inf == NULL) {
-		printf("File not found: %s\n", in);
-		return body;
-	}
+  if (inf == NULL)
+    {
+      printf ("File not found: %s\n", in);
+      return body;
+    }
 
-	while (fgets(s, MAXLINELENGTH, inf) != NULL) {
-		fprintf(body, "%s", s);
-	}
+  while (fgets (s, MAXLINELENGTH, inf) != NULL)
+    {
+      fprintf (body, "%s", s);
+    }
 
-	fclose(inf);
+  fclose (inf);
 
-	return body;
+  return body;
 }
 
 /*
  * Add a link to index file
  */
-int add_to_index(FILE * index, char *link, char *name)
+int
+add_to_index (FILE * index, char *link, char *name)
 {
 
-	char a[MAXLINELENGTH];
+  char a[MAXLINELENGTH];
 
-	strcpy(a, "<div><a href='");
-	strcat(a, BASEURL);
-	strcat(a, DESTDIR);
-	strcat(a, link);
-	strcat(a, "'>");
-	strcat(a, name);
-	strcat(a, "</a></div>\n");
-	fprintf(index, "%s", a);
-	return 0;
+  strcpy (a, "<div><a href='");
+  strcat (a, BASEURL);
+  strcat (a, DESTDIR);
+  strcat (a, link);
+  strcat (a, "'>");
+  strcat (a, name);
+  strcat (a, "</a></div>\n");
+  fprintf (index, "%s", a);
+  return 0;
 }
 
 /*
  * Build page from source
  */
-int build_page(char *in, char *out)
+int
+build_page (char *in, char *out)
 {
-	FILE *page = fopen(out, "w");
+  FILE *page = fopen (out, "w");
 
-	if (page == NULL) {
-		printf("\nFile couldn't be created: %s\n", out);
-		return 1;
-	}
+  if (page == NULL)
+    {
+      printf ("\nFile couldn't be created: %s\n", out);
+      return 1;
+    }
 
-	page = inject_foot(inject_contents(inject_head(page), in));
+  page = inject_foot (inject_contents (inject_head (page), in));
 
-	fclose(page);
-	return 0;
+  fclose (page);
+  return 0;
 }
 
 /*
  * Build all pages in directory
  */
-int build_pages(char *dirname)
+int
+build_pages (char *dirname)
 {
-	int builderr;
-	char idx[MAXLINELENGTH];
-	char outidx[MAXLINELENGTH];
-	struct dirent **dirlist;
-	struct dirent *dir;
+  int builderr;
+  char idx[MAXLINELENGTH];
+  char outidx[MAXLINELENGTH];
+  struct dirent **dirlist;
+  struct dirent *dir;
 
-	FILE *index = inject_head(open_index("index.html"));
+  FILE *index = inject_head (open_index ("index.html"));
 
-	int n = scandir(dirname, &dirlist, NULL, alphasort);
+  int n = scandir (dirname, &dirlist, NULL, alphasort);
 
-	if (n == -1) {
-		perror("scandir");
-		exit(EXIT_FAILURE);
+  if (n == -1)
+    {
+      perror ("scandir");
+      exit (EXIT_FAILURE);
+    }
+
+  while (n--)
+    {
+      dir = dirlist[n];
+      if (strcmp (dir->d_name, ".") && strcmp (dir->d_name, ".."))
+	{
+	  printf ("building %s ... ", dir->d_name);
+
+	  strcpy (idx, dirname);
+	  strcat (idx, "/");
+	  strcat (idx, dir->d_name);
+
+	  strcpy (outidx, BASEURL);
+	  strcat (outidx, DESTDIR);
+	  strcat (outidx, dir->d_name);
+
+	  builderr = build_page (idx, outidx);
+
+	  if (builderr == 0)
+	    {
+	      add_to_index (index, dir->d_name, dir->d_name);
+	    }
+	  printf ("done\n");
 	}
 
-	while (n--) {
-		dir = dirlist[n];
-		if (strcmp(dir->d_name, ".") && strcmp(dir->d_name, "..")) {
-			printf("building %s ... ", dir->d_name);
+    }
+  free (dir);
+  free (dirlist);
 
-			strcpy(idx, dirname);
-			strcat(idx, "/");
-			strcat(idx, dir->d_name);
+  fclose (inject_foot (index));
 
-			strcpy(outidx, BASEURL);
-			strcat(outidx, DESTDIR);
-			strcat(outidx, dir->d_name);
-
-			builderr = build_page(idx, outidx);
-
-			if (builderr == 0) {
-				add_to_index(index, dir->d_name, dir->d_name);
-			}
-			printf("done\n");
-		}
-
-	}
-	free(dir);
-	free(dirlist);
-
-	fclose(inject_foot(index));
-
-	return 0;
+  return 0;
 }
 
-int main(int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
-	char fullsrc[MAXLINELENGTH] = BASEURL;
-	strcat(fullsrc, SRCDIR);
-	
-	int err = build_pages(fullsrc);
+  char fullsrc[MAXLINELENGTH] = BASEURL;
+  int err;
+  
+  strcat (fullsrc, SRCDIR);
+  err = build_pages (fullsrc);
 
-	return err;
+  return err;
 }

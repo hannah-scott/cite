@@ -1,5 +1,7 @@
-CFLAGS=-g -Wall
+CFLAGS=-g -pedantic -std=c89 -Wall
 CC=cc
+
+all: cite
 
 clean: 
 	rm -f cite
@@ -7,4 +9,4 @@ clean:
 install:
 	$(CC) $(CFLAGS) cite.c -o cite
 	chmod 755 cite
-	mv cite /usr/local/bin
+	cp cite /usr/local/bin
