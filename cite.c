@@ -11,7 +11,7 @@
 FILE *open_index(char *fname)
 {
 	char idx[MAXLINELENGTH];
-	strcpy(idx, DESTIDX);
+	strcpy(idx, BASEURL);
 	strcat(idx, "/");
 	strcat(idx, fname);
 
@@ -21,6 +21,8 @@ FILE *open_index(char *fname)
 		printf("Failed to open index");
 		exit(EXIT_FAILURE);
 	}
+	
+	return index;
 }
 
 /*
@@ -37,7 +39,7 @@ FILE *inject_head(FILE * page)
 	// body
 	fprintf(page, "<!-- Generated static page, don't edit this -->\n");
 	fprintf(page, "<body>\n");
-	fprintf(page, "<header><a href='%sindex.html'>Home</a>\n", BASEURL);
+	fprintf(page, "<header><a href='%s/index.html'>Home</a>\n", BASEURL);
 
 	fprintf(page, "<h1>%s</h1>\n", TITLE);
 
@@ -87,6 +89,7 @@ int add_to_index(FILE * index, char *link, char *name)
 
 	strcpy(a, "<div><a href='");
 	strcat(a, BASEURL);
+	strcat(a, DESTDIR);
 	strcat(a, link);
 	strcat(a, "'>");
 	strcat(a, name);
@@ -142,14 +145,14 @@ int build_pages(char *dirname)
 			strcat(idx, "/");
 			strcat(idx, dir->d_name);
 
-			strcpy(outidx, DESTDIR);
-			strcat(outidx, "/");
+			strcpy(outidx, BASEURL);
+			strcat(outidx, DESTDIR);
 			strcat(outidx, dir->d_name);
 
 			builderr = build_page(idx, outidx);
 
 			if (builderr == 0) {
-				add_to_index(index, idx, dir->d_name);
+				add_to_index(index, dir->d_name, dir->d_name);
 			}
 			printf("done\n");
 		}
@@ -165,7 +168,10 @@ int build_pages(char *dirname)
 
 int main(int argc, char *argv[])
 {
-	int err = build_pages(SRCDIR);
+	char fullsrc[MAXLINELENGTH] = BASEURL;
+	strcat(fullsrc, SRCDIR);
+	
+	int err = build_pages(fullsrc);
 
-	return 0;
+	return err;
 }

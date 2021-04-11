@@ -1,8 +1,7 @@
 #define MAXLINELENGTH 128
-#define SRCDIR "/home/hannah/repos/cite/src/html"
-#define DESTDIR "/home/hannah/repos/cite/live/pages"
-#define DESTIDX "/home/hannah/repos/cite/live"
+#define SRCDIR "/../src/html/"
+#define DESTDIR "/pages/"
 
-#define BASEURL "/home/hannah/repos/cite/live/"
-#define TITLE "Test"
+#define BASEURL "/home/hannah/repos/cite/live"
+#define TITLE "Blog"
 #define CSS "/home/hannah/repos/cite/live/css/main.css"
