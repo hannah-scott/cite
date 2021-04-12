@@ -13,7 +13,7 @@ h1, h2, h3 {
 
 code, pre {
     font-family: "Liberation Mono", monospace;
-	color: cyan;
+	color: #222266;
 }
 
 blockquote {
@@ -23,11 +23,16 @@ blockquote {
 }
 
 a {
-    color: red;
+    color: #444488;
     text-decoration: none;
 }
 
 a:visited {
-    color: red;
+    color: #444488;
     text-decoration: none;
+}
+
+.index-list {
+	line-height: 1.4em;
+	list-style-type: none;
 }

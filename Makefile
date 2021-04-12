@@ -1,10 +1,10 @@
-CFLAGS=-g -pedantic -std=c89 -Wall
+CFLAGS=-std=c89 -pedantic -g -Wall
 CC=cc
 
 all: cite
 
 clean: 
-	rm -f cite
+	rm -f cite 
 
 install:
 	$(CC) $(CFLAGS) cite.c -o cite
