@@ -1,6 +1,6 @@
 #define URLLEN 128 
-#define BASEURL "/home/hannah/repos/cite/live"
+#define BASEURL "/home/hannah/repos/cite/docs"
 #define SRCDIR "/../src/"
 #define DESTDIR "/pages/"
 #define TITLE "Blog"
-#define CSS "/home/hannah/repos/cite/live/css/main.css"
+#define CSS "/css/main.css"
