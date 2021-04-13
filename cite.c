@@ -14,6 +14,7 @@ FILE *inject_head(FILE * page)
 	fprintf(page, "<head>\n");
 	fprintf(page, "<title>%s</title>\n", TITLE);
 	fprintf(page, "<link rel='stylesheet' href='%s%s'>\n", URL, CSS);
+	fprintf(page, "<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
 	fprintf(page, "</head>\n");
 	fprintf(page, "<!-- Generated static page, don't edit this -->\n");
 
