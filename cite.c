@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include "sops.h"
 #include "config.h"
+#include "sops.h"
 
 /*
  * Inject head and header text into file
@@ -55,6 +55,7 @@ void add_to_index(FILE * index, char *name, char *link)
 {
 	char n[URLLEN];
 	scp(n, name, URLLEN);
+	sr(n, '_', ' ');
 	slcut(n, '.');
 	fprintf(index, "<div>\n<a href='%s%s'>%s</a>\n</div>\n", URL, link, n);
 }

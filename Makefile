@@ -1,7 +1,7 @@
 CFLAGS=-std=c89 -pedantic -g -Wall
 CC=cc
 
-all: cite
+all: cite 
 
 clean: 
 	rm -f cite 

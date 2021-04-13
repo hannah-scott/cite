@@ -64,3 +64,15 @@ int scmp(char a[], char b[])
 	}
 	return 0;
 }
+
+void sr(char s[], char a, char b)
+{
+	int i = 0;
+	int l = slen(s);
+	
+	for (i = 0; i < l - 1; i++) {
+		if (s[i] == a) {
+			s[i] = b;
+		}
+	}
+}
