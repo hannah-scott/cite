@@ -7,7 +7,12 @@
 <body>
 <header><a href='https://hannah-scott.github.io/cite/index.html'>Home</a>
 <h1>Blog</h1>
-<div><a href='https://hannah-scott.github.io/cite/test.md'>test.md</a></div>
-<div><a href='https://hannah-scott.github.io/cite/test.html'>test.html</a></div>
+# Test
+
+This is a test page
+
+1. Here's an ol
+    - this is a ul
+2. This is an ol
 </body>
 </html>
