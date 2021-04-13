@@ -64,7 +64,7 @@ FILE *open_index(char *fname)
 {
 	FILE *index;
 	char idx[URLLEN];
-	scp(idx, BASEURL, URLLEN);
+	scp(idx, DESTDIR, URLLEN);
 	sct(idx, "/", URLLEN);
 	sct(idx, fname, URLLEN);
 
@@ -94,7 +94,7 @@ FILE *inject_head(FILE * page)
 	 */
 	fprintf(page, "<!-- Generated static page, don't edit this -->\n");
 	fprintf(page, "<body>\n");
-	fprintf(page, "<header><a href='%s/index.html'>Home</a>\n", BASEURL);
+	fprintf(page, "<header><a href='%s/index.html'>Home</a>\n", URL);
 
 	fprintf(page, "<h1>%s</h1>\n", TITLE);
 
@@ -134,8 +134,7 @@ int add_to_index(FILE * index, char *link, char *name)
 	char a[URLLEN];
 
 	scp(a, "<div><a href='", URLLEN);
-	sct(a, BASEURL, URLLEN);
-	sct(a, DESTDIR, URLLEN);
+	sct(a, URL, URLLEN);
 	sct(a, link, URLLEN);
 	sct(a, "'>", URLLEN);
 	sct(a, name, URLLEN);
@@ -153,10 +152,12 @@ int build_page(char *in, char *out)
 	FILE *page = fopen(out, "w");
 
   if (cont == NULL) {
+	printf("Couldn't open %s\n", in);
     return 1;
   }
   
   if (page == NULL) {
+	printf("Couldn't open %s\n", out);
     return 1;
 	}
   
@@ -197,8 +198,7 @@ int build_pages(char *dirname)
 			sct(idx, "/", URLLEN);
 			sct(idx, dir->d_name, URLLEN);
 
-			scp(outidx, BASEURL, URLLEN);
-			sct(outidx, DESTDIR, URLLEN);
+			scp(outidx, DESTDIR, URLLEN);
 			sct(outidx, dir->d_name, URLLEN);
 
 			builderr = build_page(idx, outidx);
@@ -225,10 +225,9 @@ int main(int argc, char *argv[])
 	char fullsrc[URLLEN];
 	int err;
 
-	scp(fullsrc, BASEURL, URLLEN);
-	sct(fullsrc, SRCDIR, URLLEN);
+	scp(fullsrc, SRCDIR, URLLEN);
 	
-  err = build_pages(fullsrc);
+  	err = build_pages(fullsrc);
 
 	return err;
 
