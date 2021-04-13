@@ -86,7 +86,7 @@ FILE *inject_head(FILE * page)
 	fprintf(page, "<html>\n");
 	fprintf(page, "<head>\n");
 	fprintf(page, "<title>%s</title>\n", TITLE);
-	fprintf(page, "<link rel='stylesheet' href='%s'", CSS);
+	fprintf(page, "<link rel='stylesheet' href='%s%s'>\n",URL, CSS);
 	fprintf(page, "</head>\n");
 
 	/*
@@ -94,7 +94,7 @@ FILE *inject_head(FILE * page)
 	 */
 	fprintf(page, "<!-- Generated static page, don't edit this -->\n");
 	fprintf(page, "<body>\n");
-	fprintf(page, "<header><a href='%s/index.html'>Home</a>\n", URL);
+	fprintf(page, "<header><a href='%sindex.html'>Home</a>\n", URL);
 
 	fprintf(page, "<h1>%s</h1>\n", TITLE);
 
@@ -204,6 +204,7 @@ int build_pages(char *dirname)
 			builderr = build_page(idx, outidx);
 
 			if (builderr == 0) {
+				printf("%s\n", dir->d_name);
 				add_to_index(index, dir->d_name, dir->d_name);
 			  printf("success\n");
       } else {

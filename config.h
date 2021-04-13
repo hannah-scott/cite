@@ -4,4 +4,4 @@
 #define SRCDIR "/home/hannah/repos/cite/src/"
 #define DESTDIR "/home/hannah/repos/cite/docs/"
 #define TITLE "Blog"
-#define CSS "/css/main.css"
+#define CSS "css/main.css"
