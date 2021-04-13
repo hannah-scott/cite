@@ -2,99 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
-
+#include "sops.h"
 #include "config.h"
-
-int slen(char a[])
-{
-	int i = 0;
-	for (i = 0; i < URLLEN - 1; i++) {
-		if (a[i] == '\0') {
-			return i;
-		}
-	}
-	return i;
-}
-
-void sct(char a[], char b[], int l)
-{
-	int s = slen(a);
-	int i = s;
-	for (i = s; i < l - 1; i++) {
-		if (b[i - s] != '\0') {
-			a[i] = b[i - s];
-		} else {
-			a[i] = '\0';
-			break;
-		}
-	}
-	a[i] = '\0';
-}
-
-void scp(char a[], char b[], int l)
-{
-	int i = 0;
-	for (i = 0; i < l - 1; i++) {
-		if (b[i] != '\0') {
-			a[i] = b[i];
-		} else {
-			a[i] = '\0';
-			break;
-		}
-	}
-	a[i] = '\0';
-}
-
-/* Left cut string */
-void slcut(char a[], char b[], char d)
-{
-	int i = 0;
-  int l = slen(a);
-
-	for (i = 0; i < l - 1; i++) {
-		if (b[i] != '\0') {
-			if (b[i] == d) {
-				a[i] = '\0';
-				break;
-			} else {
-				a[i] = b[i];
-			}
-		}
-	}
-}
-
-int scmp(char a[], char b[])
-{
-	int i = 0;
-	int l = slen(a);
-	for (i = 0; i < l - 1; i++) {
-		if (a[i] != b[i]) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
-/*
- * Create and open index file
- */
-FILE *open_index(char *fname)
-{
-	FILE *index;
-	char idx[URLLEN];
-	scp(idx, DESTDIR, URLLEN);
-	sct(idx, "/", URLLEN);
-	sct(idx, fname, URLLEN);
-
-	index = fopen(idx, "w");
-
-	if (index == NULL) {
-		printf("Failed to open %s\n", fname);
-		exit(EXIT_FAILURE);
-	}
-
-	return index;
-}
 
 /*
  * Inject head and header text into file
@@ -106,14 +15,10 @@ FILE *inject_head(FILE * page)
 	fprintf(page, "<title>%s</title>\n", TITLE);
 	fprintf(page, "<link rel='stylesheet' href='%s%s'>\n", URL, CSS);
 	fprintf(page, "</head>\n");
-
-	/*
-	 * body
-	 */
 	fprintf(page, "<!-- Generated static page, don't edit this -->\n");
+
 	fprintf(page, "<body>\n");
 	fprintf(page, "<header><a href='%sindex.html'>Home</a>\n", URL);
-
 	fprintf(page, "<h1>%s</h1>\n", TITLE);
 
 	return page;
@@ -146,65 +51,54 @@ FILE *inject_contents(FILE * body, FILE * in)
 /*
  * Add a link to index file
  */
-int add_to_index(FILE * index, char *link)
+void add_to_index(FILE * index, char *name, char *link)
 {
-
-	char a[URLLEN];
-	char name[URLLEN];
-
-	scp(name, link, URLLEN);
-	slcut(name, link, '.');
-
-	scp(a, "<div><a href='", URLLEN);
-	sct(a, URL, URLLEN);
-	sct(a, link, URLLEN);
-	sct(a, "'>", URLLEN);
-	sct(a, name, URLLEN);
-	sct(a, "</a></div>\n", URLLEN);
-	fprintf(index, "%s", a);
-	return 0;
+	char n[URLLEN];
+	scp(n, name, URLLEN);
+	slcut(n, '.');
+	fprintf(index, "<div>\n<a href='%s%s'>%s</a>\n</div>\n", URL, link, n);
 }
 
 /*
  * Build page from source
  */
-int build_page(char *in, char *out)
+int make_page(char *in, char *out)
 {
-	FILE *cont = fopen(in, "r");
-	FILE *page = fopen(out, "w");
+	FILE *fin;
+	FILE *fout;
 
-	if (cont == NULL) {
+	if ((fin = fopen(in, "r")) == NULL) {
 		printf("Couldn't open %s\n", in);
 		return 1;
 	}
 
-	if (page == NULL) {
-		printf("Couldn't open %s\n", out);
+	if ((fout = fopen(out, "w")) == NULL) {
+		printf("Couldn't create %s\n", out);
 		return 1;
 	}
 
-	page = inject_foot(inject_contents(inject_head(page), cont));
+	fout = inject_foot(inject_contents(inject_head(fout), fin));
 
-	fclose(cont);
-	fclose(page);
+	fclose(fin);
+	fclose(fout);
 
 	return 0;
 }
 
-/*
- * Build all pages in directory
- */
-int build_pages(char *dirname)
+void build_pages(char *path, FILE * fidx)
 {
-	int builderr;
-	char idx[URLLEN];
-	char outidx[URLLEN];
 	struct dirent **dirlist;
 	struct dirent *dir;
+	char fullpath[URLLEN];
+	char srcurl[URLLEN];
+	char desturl[URLLEN];
+	char pd_name[URLLEN];
+	int n, berr;
 
-	FILE *index = inject_head(open_index("index.html"));
+	scp(fullpath, SRCDIR, URLLEN);
+	sct(fullpath, path, URLLEN);
 
-	int n = scandir(dirname, &dirlist, NULL, alphasort);
+	n = scandir(fullpath, &dirlist, NULL, alphasort);
 
 	if (n == -1) {
 		perror("scandir");
@@ -213,45 +107,61 @@ int build_pages(char *dirname)
 
 	while (n--) {
 		dir = dirlist[n];
-		if (scmp(dir->d_name, ".") && scmp(dir->d_name, "..")) {
-			printf("Building %s - ", dir->d_name);
 
-			scp(idx, dirname, URLLEN);
-			sct(idx, "/", URLLEN);
-			sct(idx, dir->d_name, URLLEN);
+		scp(pd_name, path, URLLEN);
+		if (scmp(path, SRCDIR)) {
+			sct(pd_name, "/", URLLEN);
+		}
+		sct(pd_name, dir->d_name, URLLEN);
 
-			scp(outidx, DESTDIR, URLLEN);
-			sct(outidx, dir->d_name, URLLEN);
+		if (dir->d_type == DT_DIR) {
+			if (scmp(dir->d_name, ".") && scmp(dir->d_name, "..")) {
+				/* build pages in subdirectory */
+				build_pages(pd_name, fidx);
+			}
+		} else if (dir->d_type == DT_REG) {
+			/* cat together link to file */
+			scp(srcurl, SRCDIR, URLLEN);
+			sct(srcurl, pd_name, URLLEN);
 
-			builderr = build_page(idx, outidx);
+			/* cat together destination */
+			scp(desturl, DESTDIR, URLLEN);
+			sct(desturl, pd_name, URLLEN);
 
-			if (builderr == 0) {
-				printf("%s\n", dir->d_name);
-				add_to_index(index, dir->d_name);
-				printf("success\n");
-			} else {
-				printf("fail\n");
+			berr = make_page(srcurl, desturl);
+
+			/* cat together link for index.html */
+			if (berr == 0) {
+				add_to_index(fidx, dir->d_name, pd_name);
 			}
 		}
-
 	}
-	free(dir);
+
 	free(dirlist);
-
-	fclose(inject_foot(index));
-
-	return 0;
+	free(dir);
 }
 
-int main(int argc, char *argv[])
+int main(void)
 {
-	char fullsrc[URLLEN];
-	int err;
+	char idx[URLLEN];
+	FILE *fidx;
 
-	scp(fullsrc, SRCDIR, URLLEN);
+	scp(idx, DESTDIR, URLLEN);
+	sct(idx, "index.html", URLLEN);
 
-	err = build_pages(fullsrc);
+	fidx = fopen(idx, "w");
 
-	return err;
+	if (fidx == NULL) {
+		printf("Couldn't create index.html\n");
+		return 1;
+	}
+
+	fidx = inject_head(fidx);
+
+	build_pages("", fidx);
+
+	fclose(inject_foot(fidx));
+
+	return 0;
 
 }

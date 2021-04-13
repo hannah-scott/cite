@@ -1,4 +1,4 @@
-#define URLLEN 128 
+#define URLLEN 128
 #define URL "https://hannah-scott.github.io/cite/"
 
 #define SRCDIR "/home/hannah/repos/cite/src/"
