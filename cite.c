@@ -105,7 +105,7 @@ void sf_mkdir(char *dirname)
 	}
 } 
 
-void build_pages(char *path, FILE * fidx)
+void build_pages(char *path, FILE * fidx, int depth)
 {
 	struct dirent **dirlist;
 	struct dirent *dir;
@@ -113,13 +113,16 @@ void build_pages(char *path, FILE * fidx)
 	char srcurl[URLLEN];
 	char desturl[URLLEN];
 	char pd_name[URLLEN];
+	char dt[URLLEN];
 	int n, berr;
+	int m = 0;
 
 	scp(fullpath, SRCDIR, URLLEN);
 	sct(fullpath, path, URLLEN);
 
 	n = scandir(fullpath, &dirlist, NULL, alphasort);
 
+	
 	if (n == -1) {
 		perror("scandir");
 		exit(EXIT_FAILURE);
@@ -134,14 +137,7 @@ void build_pages(char *path, FILE * fidx)
 		}
 		sct(pd_name, dir->d_name, URLLEN);
 
-		if (dir->d_type == DT_DIR) {
-			if (scmp(dir->d_name, ".") && scmp(dir->d_name, "..")) {
-				sf_mkdir(pd_name);			
-			
-				/* build pages in subdirectory */
-				build_pages(pd_name, fidx);
-			}
-		} else if (dir->d_type == DT_REG) {
+		if (dir->d_type == DT_REG) {
 			/* cat together link to file */
 			scp(srcurl, SRCDIR, URLLEN);
 			sct(srcurl, pd_name, URLLEN);
@@ -158,6 +154,42 @@ void build_pages(char *path, FILE * fidx)
 			}
 		}
 	}
+
+	n = scandir(fullpath, &dirlist, NULL, alphasort);
+	m = 0;
+
+	while (m < n) {
+		dir = dirlist[m];
+
+		scp(pd_name, path, URLLEN);
+		if (scmp(path, SRCDIR)) {
+			sct(pd_name, "/", URLLEN);
+		}
+		sct(pd_name, dir->d_name, URLLEN);
+
+		if (dir->d_type == DT_DIR) {
+			if (scmp(dir->d_name, ".") && scmp(dir->d_name, "..")) {
+				sf_mkdir(pd_name);		
+
+				scp(dt, dir->d_name, URLLEN);
+				sr(dt, '_', ' ');
+				slcut(dt, '.');	
+
+				depth++;
+
+				fprintf(fidx, "<h%d>%s</h%d>", depth, dt, depth);
+			
+				/* build pages in subdirectory */
+				build_pages(pd_name, fidx, depth);
+
+				depth--;
+			}
+		}
+
+		m++;
+	}
+
+
 
 	free(dirlist);
 	free(dir);
@@ -180,7 +212,7 @@ int main(void)
 
 	fidx = inject_head(fidx);
 
-	build_pages("", fidx);
+	build_pages("", fidx, 1);
 
 	fclose(inject_foot(fidx));
 
