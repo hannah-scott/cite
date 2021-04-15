@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -87,6 +88,23 @@ int make_page(char *in, char *out)
 	return 0;
 }
 
+/* 
+  Check for existence of a subdir in DESTDIR, and if it
+ 	doesn't exist then make it
+ */
+void sf_mkdir(char *dirname)
+{
+	char dd[URLLEN];
+	struct stat s;
+
+	scp(dd, DESTDIR, URLLEN);
+	sct(dd, dirname, URLLEN);
+
+	if (stat(dd, &s) == -1) {
+		mkdir(dd, 0700);
+	}
+} 
+
 void build_pages(char *path, FILE * fidx)
 {
 	struct dirent **dirlist;
@@ -118,6 +136,8 @@ void build_pages(char *path, FILE * fidx)
 
 		if (dir->d_type == DT_DIR) {
 			if (scmp(dir->d_name, ".") && scmp(dir->d_name, "..")) {
+				sf_mkdir(pd_name);			
+			
 				/* build pages in subdirectory */
 				build_pages(pd_name, fidx);
 			}
