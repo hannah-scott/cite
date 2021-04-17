@@ -7,6 +7,12 @@
 #include "sops.h"
 
 /*
+ * Define globals
+ */
+FILE *fidx;
+int header_depth;
+
+/*
  * Inject head and header text into file
  */
 FILE *inject_head(FILE * page)
@@ -53,13 +59,13 @@ FILE *inject_contents(FILE * body, FILE * in)
 /*
  * Add a link to index file
  */
-void add_to_index(FILE * index, char *name, char *link)
+void add_to_index(char *name, char *link)
 {
 	char n[URLLEN];
 	scp(n, name, URLLEN);
 	sr(n, '_', ' ');
 	slcut(n, '.');
-	fprintf(index, "<div>\n<a href='%s%s'>%s</a>\n</div>\n", URL, link, n);
+	fprintf(fidx, "<div>\n<a href='%s%s'>%s</a>\n</div>\n", URL, link, n);
 }
 
 /*
@@ -105,7 +111,7 @@ void sf_mkdir(char *dirname)
 	}
 } 
 
-void build_pages(char *path, FILE * fidx, int depth)
+void build_pages(char *path)
 {
 	struct dirent **dirlist;
 	struct dirent *dir;
@@ -150,7 +156,7 @@ void build_pages(char *path, FILE * fidx, int depth)
 
 			/* cat together link for index.html */
 			if (berr == 0) {
-				add_to_index(fidx, dir->d_name, pd_name);
+				add_to_index(dir->d_name, pd_name);
 			}
 		}
 	}
@@ -175,14 +181,14 @@ void build_pages(char *path, FILE * fidx, int depth)
 				sr(dt, '_', ' ');
 				slcut(dt, '.');	
 
-				depth++;
+				header_depth++;
 
-				fprintf(fidx, "<h%d>%s</h%d>", depth, dt, depth);
+				fprintf(fidx, "<h%d>%s</h%d>", header_depth, dt, header_depth);
 			
 				/* build pages in subdirectory */
-				build_pages(pd_name, fidx, depth);
+				build_pages(pd_name);
 
-				depth--;
+				header_depth--;
 			}
 		}
 
@@ -198,12 +204,12 @@ void build_pages(char *path, FILE * fidx, int depth)
 int main(void)
 {
 	char idx[URLLEN];
-	FILE *fidx;
 
 	scp(idx, DESTDIR, URLLEN);
 	sct(idx, "index.html", URLLEN);
 
 	fidx = fopen(idx, "w");
+	header_depth = 1;
 
 	if (fidx == NULL) {
 		printf("Couldn't create index.html\n");
@@ -212,7 +218,7 @@ int main(void)
 
 	fidx = inject_head(fidx);
 
-	build_pages("", fidx, 1);
+	build_pages("");
 
 	fclose(inject_foot(fidx));
 
