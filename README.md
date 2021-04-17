@@ -20,9 +20,12 @@ $ ./cite
 cite works well in a build script with a tool like markdown or Pandoc. This is
 how I'm building my personal site right now.
 
-## Example
+## Examples
 
 The [Github Pages][gp] site was made with cite, and its source can be found in
 docs.
 
+My personal website [hddn][hddn] is also made with cite and discount Markdown.
+
 [gp]: https://hannah-scott.github.io/cite
+[hddn]: https://hannahs.ddns.net
