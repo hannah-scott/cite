@@ -23,7 +23,7 @@ how I'm building my personal site right now.
 ## Example
 
 My personal website [hddn][hddn] is made with cite and discount Markdown. The
-site is [open-source][repo] and contains by config file and build script.
+site is [open-source][repo] and contains my config file and build script.
 
 [hddn]: https://hannahs.ddns.net
 [repo]: https://github.com/hannah-scott/hannahs.ddns.net
