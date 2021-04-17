@@ -12,6 +12,18 @@
 FILE *fidx;
 int header_depth;
 
+/* 
+ * Forward declarations
+ */
+
+FILE *inject_head(FILE *page);
+FILE *inject_foot(FILE *page);
+FILE *inject_contents(FILE *body, FILE *in);
+void sf_mkdir(char *dirname);
+int make_page(char *fname, char *pd_name);
+int make_dir(char *dname, char *pd_name);
+void build_pages(char *path);
+
 /*
  * Inject head and header text into file
  */
@@ -71,7 +83,7 @@ void add_to_index(char *name, char *link)
 /*
  * Build page from source
  */
-int make_page(char *in, char *out)
+int inject_page(char *in, char *out)
 {
 	FILE *fin;
 	FILE *fout;
@@ -111,85 +123,96 @@ void sf_mkdir(char *dirname)
 	}
 } 
 
+int make_page(char *fname, char *pd_name)
+{
+	char srcurl[URLLEN];
+	char desturl[URLLEN];
+	int err = 0;
+
+	scp(srcurl, SRCDIR, URLLEN);
+	sct(srcurl, pd_name, URLLEN);
+
+	scp(desturl, DESTDIR, URLLEN);
+	sct(desturl, pd_name, URLLEN);
+	
+	err = inject_page(srcurl, desturl);
+
+	if (err == 0) {
+		add_to_index(fname, pd_name);
+	}
+
+	return err;
+}
+
+int make_dir(char *dname, char *pd_name)
+{
+	char d_header[URLLEN];
+	if (scmp(dname, ".") && scmp(dname, "..")) {
+		sf_mkdir(pd_name);
+
+		scp(d_header, dname, URLLEN);
+		sr(d_header, '_', ' ');
+		slcut(d_header, '.');
+
+		header_depth++;
+
+		fprintf(fidx, "<h%d>%s</h%d>\n",
+				header_depth,
+				d_header,
+				header_depth);
+
+		build_pages(pd_name);
+
+		header_depth--;
+	}
+	return 0;
+}
+
+void set_pd(char *pd_name, char *d_name, char *path) {
+	scp(pd_name, path, URLLEN);
+	if (scmp(path, SRCDIR)) {
+		sct(pd_name, "/", URLLEN);
+	}
+	sct(pd_name, d_name, URLLEN);
+}
+
 void build_pages(char *path)
 {
 	struct dirent **dirlist;
 	struct dirent *dir;
-	char fullpath[URLLEN];
-	char srcurl[URLLEN];
-	char desturl[URLLEN];
-	char pd_name[URLLEN];
-	char dt[URLLEN];
-	int n, berr;
-	int m = 0;
+	char fullpath[URLLEN], pd_name[URLLEN];
+	int m, n; 
 
 	scp(fullpath, SRCDIR, URLLEN);
 	sct(fullpath, path, URLLEN);
 
 	n = scandir(fullpath, &dirlist, NULL, alphasort);
-
 	
 	if (n == -1) {
 		perror("scandir");
 		exit(EXIT_FAILURE);
 	}
 
+	m = n;
+
 	while (n--) {
 		dir = dirlist[n];
-
-		scp(pd_name, path, URLLEN);
-		if (scmp(path, SRCDIR)) {
-			sct(pd_name, "/", URLLEN);
-		}
-		sct(pd_name, dir->d_name, URLLEN);
+		set_pd(pd_name, dir->d_name, path);
 
 		if (dir->d_type == DT_REG) {
-			/* cat together link to file */
-			scp(srcurl, SRCDIR, URLLEN);
-			sct(srcurl, pd_name, URLLEN);
-
-			/* cat together destination */
-			scp(desturl, DESTDIR, URLLEN);
-			sct(desturl, pd_name, URLLEN);
-
-			berr = make_page(srcurl, desturl);
-
-			/* cat together link for index.html */
-			if (berr == 0) {
-				add_to_index(dir->d_name, pd_name);
-			}
+			make_page(dir->d_name, pd_name);
 		}
 	}
-
+	
 	n = scandir(fullpath, &dirlist, NULL, alphasort);
 	m = 0;
 
 	while (m < n) {
 		dir = dirlist[m];
-
-		scp(pd_name, path, URLLEN);
-		if (scmp(path, SRCDIR)) {
-			sct(pd_name, "/", URLLEN);
-		}
-		sct(pd_name, dir->d_name, URLLEN);
+		set_pd(pd_name, dir->d_name, path);
 
 		if (dir->d_type == DT_DIR) {
-			if (scmp(dir->d_name, ".") && scmp(dir->d_name, "..")) {
-				sf_mkdir(pd_name);		
-
-				scp(dt, dir->d_name, URLLEN);
-				sr(dt, '_', ' ');
-				slcut(dt, '.');	
-
-				header_depth++;
-
-				fprintf(fidx, "<h%d>%s</h%d>", header_depth, dt, header_depth);
-			
-				/* build pages in subdirectory */
-				build_pages(pd_name);
-
-				header_depth--;
-			}
+			make_dir(dir->d_name, pd_name);
 		}
 
 		m++;
