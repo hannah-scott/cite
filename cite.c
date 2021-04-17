@@ -10,7 +10,8 @@
  * Define globals
  */
 FILE *fidx;
-int header_depth;
+int header_depth = 1;
+char pd_name[URLLEN];
 
 /* 
  * Forward declarations
@@ -20,8 +21,9 @@ FILE *inject_head(FILE *page);
 FILE *inject_foot(FILE *page);
 FILE *inject_contents(FILE *body, FILE *in);
 void sf_mkdir(char *dirname);
-int make_page(char *fname, char *pd_name);
-int make_dir(char *dname, char *pd_name);
+int make_page(char *fname);
+int make_dir(char *dname);
+void set_pd_name(char *d_name, char *path);
 void build_pages(char *path);
 
 /*
@@ -123,7 +125,7 @@ void sf_mkdir(char *dirname)
 	}
 } 
 
-int make_page(char *fname, char *pd_name)
+int make_page(char *fname)
 {
 	char srcurl[URLLEN];
 	char desturl[URLLEN];
@@ -144,31 +146,29 @@ int make_page(char *fname, char *pd_name)
 	return err;
 }
 
-int make_dir(char *dname, char *pd_name)
+int make_dir(char *d_name)
 {
 	char d_header[URLLEN];
-	if (scmp(dname, ".") && scmp(dname, "..")) {
-		sf_mkdir(pd_name);
+	sf_mkdir(pd_name);
 
-		scp(d_header, dname, URLLEN);
-		sr(d_header, '_', ' ');
-		slcut(d_header, '.');
+	scp(d_header, d_name, URLLEN);
+	sr(d_header, '_', ' ');
+	slcut(d_header, '.');
 
-		header_depth++;
+	header_depth++;
 
-		fprintf(fidx, "<h%d>%s</h%d>\n",
-				header_depth,
-				d_header,
-				header_depth);
+	fprintf(fidx, "<h%d>%s</h%d>\n",
+			header_depth,
+			d_header,
+			header_depth);
 
-		build_pages(pd_name);
+	build_pages(pd_name);
 
-		header_depth--;
-	}
+	header_depth--;
 	return 0;
 }
 
-void set_pd(char *pd_name, char *d_name, char *path) {
+void set_pd_name(char *d_name, char *path) {
 	scp(pd_name, path, URLLEN);
 	if (scmp(path, SRCDIR)) {
 		sct(pd_name, "/", URLLEN);
@@ -180,27 +180,27 @@ void build_pages(char *path)
 {
 	struct dirent **dirlist;
 	struct dirent *dir;
-	char fullpath[URLLEN], pd_name[URLLEN];
+	char fullpath[URLLEN];
+	char ppd_name[URLLEN];
 	int m, n; 
 
 	scp(fullpath, SRCDIR, URLLEN);
 	sct(fullpath, path, URLLEN);
-
-	n = scandir(fullpath, &dirlist, NULL, alphasort);
 	
+	n = scandir(fullpath, &dirlist, NULL, alphasort);
 	if (n == -1) {
 		perror("scandir");
 		exit(EXIT_FAILURE);
 	}
 
-	m = n;
-
 	while (n--) {
 		dir = dirlist[n];
-		set_pd(pd_name, dir->d_name, path);
 
 		if (dir->d_type == DT_REG) {
-			make_page(dir->d_name, pd_name);
+			scp(ppd_name, pd_name, URLLEN);
+			set_pd_name(dir->d_name, path);
+			make_page(dir->d_name);
+			scp(pd_name, ppd_name, URLLEN);
 		}
 	}
 	
@@ -209,16 +209,16 @@ void build_pages(char *path)
 
 	while (m < n) {
 		dir = dirlist[m];
-		set_pd(pd_name, dir->d_name, path);
 
 		if (dir->d_type == DT_DIR) {
-			make_dir(dir->d_name, pd_name);
+			if (scmp(dir->d_name, ".") && scmp(dir->d_name, "..")) {
+				set_pd_name(dir->d_name, path);
+				make_dir(dir->d_name);
+			}
 		}
 
 		m++;
 	}
-
-
 
 	free(dirlist);
 	free(dir);
@@ -232,7 +232,6 @@ int main(void)
 	sct(idx, "index.html", URLLEN);
 
 	fidx = fopen(idx, "w");
-	header_depth = 1;
 
 	if (fidx == NULL) {
 		printf("Couldn't create index.html\n");
