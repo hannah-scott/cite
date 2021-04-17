@@ -16,7 +16,6 @@ char pd_name[URLLEN];
 /* 
  * Forward declarations
  */
-
 FILE *inject_head(FILE * page);
 FILE *inject_foot(FILE * page);
 FILE *inject_contents(FILE * body, FILE * in);
@@ -31,6 +30,7 @@ void build_pages(char *path);
  */
 FILE *inject_head(FILE * page)
 {
+	fprintf(page, "<!DOCTYPE html>\n");
 	fprintf(page, "<html>\n");
 	fprintf(page, "<head>\n");
 	fprintf(page, "<title>%s</title>\n", TITLE);
@@ -40,8 +40,7 @@ FILE *inject_head(FILE * page)
 	fprintf(page, "</head>\n");
 	fprintf(page, "<!-- Generated static page, don't edit this -->\n");
 	fprintf(page, "<body>\n");
-	fprintf(page, "<header><a href='%sindex.html'>Home</a>\n", URL);
-	fprintf(page, "<h1>%s</h1>\n", TITLE);
+	fprintf(page, "<header><a href='%sindex.html'><h1>%s</h1></a></header>\n", URL, TITLE);
 
 	return page;
 }
@@ -156,9 +155,11 @@ int make_page(char *fname, char *path)
 int make_dir(char *d_name, char *path)
 {
 	char d_header[URLLEN];
+	char ppd_name[URLLEN];
 
 	header_depth++;
 
+	scp(ppd_name, pd_name, URLLEN);
 	set_pd_name(d_name, path);
 	sf_mkdir(pd_name);
 
@@ -170,6 +171,7 @@ int make_dir(char *d_name, char *path)
 	build_pages(pd_name);
 
 	header_depth--;
+	scp(pd_name, ppd_name, URLLEN);
 	return 0;
 }
 
@@ -200,7 +202,7 @@ void build_pages(char *path)
 
 	n = scandir(fullpath, &dirlist, NULL, alphasort);
 	if (n == -1) {
-		perror("scandir");
+		printf("ERROR: %s\n", fullpath);
 		exit(EXIT_FAILURE);
 	}
 
