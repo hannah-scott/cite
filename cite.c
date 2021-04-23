@@ -135,25 +135,39 @@ void add_to_index(FILE *fidx, struct dirent *dir, char *path, int depth)
 
 int get_index_links(char *path, FILE *fidx, int depth)
 {
-    int n;
+    int m, n;
     struct dirent **dirlist;
     struct dirent *dir;
 
+    depth++;
     n = scandir(path, &dirlist, NULL, alphasort);
 
     if (n == -1) {
         return -1;
     }
 
-    depth++;
     while (n--) {
         dir = dirlist[n];
-        add_to_index(fidx, dir, path, depth);
+        if (dir->d_type == DT_REG) {
+            add_to_index(fidx, dir, path, depth);
+        }
+    }
+
+    n = scandir(path, &dirlist, NULL, alphasort);
+    m = 0;
+
+    while (m < n) {
+        dir = dirlist[m];
         if (dir->d_type == DT_DIR && is_html_dir(dir->d_name) == 0) {
+            add_to_index(fidx, dir, path, depth);
             set_pd_name(dir->d_name, path);
             get_index_links(pd_name, fidx, depth);
         }
+        m++;
     }
+
+
+
     depth--;
 
     return 0;
@@ -192,9 +206,9 @@ int make_page(char *fname, char *path)
 	sct(desturl, pd_name, URLLEN);
 
 	err = inject_page(srcurl, desturl);
-
 	scp(pd_name, ppd_name, URLLEN);
-	return err;
+	
+    return err;
 }
 
 /*
@@ -216,7 +230,6 @@ int make_dir(char *d_name, char *path)
 	set_pd_name(d_name, path);
     scp(index, fp, URLLEN);
     sct(index, "/index.html", URLLEN);
-
 
     sf_mkdir(d_name);
 	build_pages(pd_name);
@@ -248,7 +261,7 @@ void build_pages(char *path)
 	struct dirent **dirlist;
 	struct dirent *dir;
 	char fullpath[URLLEN];
-	int m, n;
+	int n;
 
 	scp(fullpath, SRCDIR, URLLEN);
 	sct(fullpath, path, URLLEN);
@@ -264,21 +277,11 @@ void build_pages(char *path)
 
 		if (dir->d_type == DT_REG) {
 			make_page(dir->d_name, path);
-		}
-	}
-
-	n = scandir(fullpath, &dirlist, NULL, alphasort);
-	m = 0;
-
-	while (m < n) {
-		dir = dirlist[m];
-
-		if (dir->d_type == DT_DIR) {
-			if (scmp(dir->d_name, ".") && scmp(dir->d_name, "..")) {
+		} else if (dir->d_type == DT_DIR) {
+			if (is_html_dir(dir->d_name) == 0) {
                 make_dir(dir->d_name, path);
 			}
 		}
-		m++;
 	}
 
 	free(dirlist);
