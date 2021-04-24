@@ -149,25 +149,38 @@ int get_index_links(char *path, FILE *fidx, int depth)
 
     depth++;
     n = scandir(path, &dirlist, NULL, alphasort);
+    m = 0;
 
     if (n == -1) {
         return -1;
     }
 
-    m = 0;
     while (m < n) {
-        dir = dirlist[m];
+        if (ALPHASORTFILES == 0) {
+	    dir = dirlist[n-1];
+	} else {
+	    dir = dirlist[m];
+	}
         if (dir->d_type == DT_REG) {
             add_to_index(fidx, dir, path, depth);
         }
-        m++;
+	if (ALPHASORTFILES == 0) {
+	    n--;
+	} else {
+	    m++;
+	}
     }
 
     n = scandir(path, &dirlist, NULL, alphasort);
     m = 0;
 
     while (m < n) {
-        dir = dirlist[m];
+	if (ALPHASORTDIRS == 0) {
+	    dir = dirlist[n-1];
+	} else {
+	    dir = dirlist[m];
+	}
+
         if (dir->d_type == DT_DIR && is_html_dir(dir->d_name) == 0) {
             add_to_index(fidx, dir, path, depth);
 
@@ -176,7 +189,12 @@ int get_index_links(char *path, FILE *fidx, int depth)
             get_index_links(pd_name, fidx, depth);
             scp(pd_name, ppd_name, URLLEN);
         }
-        m++;
+
+	if (ALPHASORTDIRS == 0) {
+	    n--;
+	} else {
+	    m++;
+	}
     }
 
     depth--;
