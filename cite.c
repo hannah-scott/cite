@@ -272,10 +272,29 @@ int get_index_links(char *path, FILE * fidx, int depth)
 
 int generate_index_file(char *path, char *idx)
 {
-	FILE *fidx;
+	FILE *fidx, *h;
+	char rp[URLLEN];
+	char hp[URLLEN];
 	int err;
 	int depth = 1;
+	struct stat s;
 	fidx = inject_head(fopen(idx, "w"));
+
+	/* Inject index header contents */
+	get_relpath(rp, path);
+	scp(hp, SRCDIR, URLLEN);
+	sct(hp, rp, URLLEN);
+	sct(hp, "/index.html", URLLEN);
+
+	printf("%s\n", hp);
+
+	if (stat(hp, &s) != -1) {
+		printf("found it\n");
+		h = fopen(hp, "r");
+		fidx = inject_contents(fidx, h);
+		fclose(h);
+	}
+
 
 	err = get_index_links(path, fidx, depth);
 	fclose(inject_foot(fidx));
