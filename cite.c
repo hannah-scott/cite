@@ -200,7 +200,8 @@ void add_to_index(FILE * fidx, struct dirent *dir, char *path, int depth)
 				"<h%d><a class='dir-link' href='%s'>%s</a></h%d>\n",
 				depth, url, name, depth);
 		}
-	} else if (dir->d_type == DT_REG && scmp(dir->d_name, "index.html")) {
+	} else if (dir->d_type == DT_REG && scmp(dir->d_name, "index.html") 
+			&& scmp(dir->d_name, "_index.html")) {
 		fprintf(fidx, "<div><a href='%s'>%s</a></div>\n", url, name);
 	}
 }
@@ -284,12 +285,12 @@ int generate_index_file(char *path, char *idx)
 	get_relpath(rp, path);
 	scp(hp, SRCDIR, URLLEN);
 	sct(hp, rp, URLLEN);
-	sct(hp, "/index.html", URLLEN);
-
-	printf("%s\n", hp);
+	if (scmp(hp, SRCDIR)) {
+		sct(hp, "/", URLLEN);
+	}
+	sct(hp, "_index.html", URLLEN);
 
 	if (stat(hp, &s) != -1) {
-		printf("found it\n");
 		h = fopen(hp, "r");
 		fidx = inject_contents(fidx, h);
 		fclose(h);
